@@ -107,6 +107,7 @@ int main(int argc, char* argv[])
 
 	GPtrArray* main_data_table;
 	GPtrArray* result_data_table = g_ptr_array_new ();
+	GNode* result_root;
 
 	main_data_table = node_to_array (world, main_data_table);
 
@@ -159,11 +160,13 @@ int main(int argc, char* argv[])
 	GPtrArray* remember_dataTable;
 
 	int result_data_flag = TABLE_IS_SEARCH_RESULT;
+
+	GNode* main_node = world;
 	while ((ch = getch ()) != KEY_F(1)) {
 		switch (ch) {
 			/* form window loop */
 			case 'b' :
-				board_eventhandler (main_board, world);
+				board_eventhandler (main_board, main_node);
 				break;
 			case 's' :
 				wprintw (search_wnd, "");
@@ -207,7 +210,9 @@ int main(int argc, char* argv[])
 				/*			length = strlen (regex_exp);
 							strncpy (regex_exp + length, &regex_tail, 1);*/
 							
-							result_data_table = search_by_regex (world, regex_exp, result_data_table);
+							result_root = search_by_regex (world, regex_exp, result_root);
+							main_node = result_root;
+							result_data_table = node_to_array (result_root, result_data_table);
 							clear_board (main_board);
 							main_board -> dataTable = result_data_table;
 							main_board -> userdata = (void*) &result_data_flag;

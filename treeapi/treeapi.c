@@ -60,19 +60,33 @@ static gboolean store_into_g_ptr_array (GNode* node, gpointer g_ptr_array) {
 	return false;
 }
 
-static gboolean check_and_store (GNode* node, gpointer data) {
+static void check_and_store (GNode* node, gpointer data) {
 	STOCKINFO* temp = (STOCKINFO*) node -> data;
-	/* regex_t_and_array* temp1 = (regex_t_and_array*) data; */
-	regex_t_and_array* temp_data = (regex_t_and_array*) data;
+	/* 얕은 복사 */
+	regex_t_and_node* temp_data = (regex_t_and_node*) malloc (sizeof (regex_t_and_node)); 
+	*temp_data = *(regex_t_and_node*) data;
 
 	int status = regexec (&(temp_data -> state), temp -> symbol, 0, NULL, 0);
-	if (status == 0 || g_node_depth (node) <= 2) {
-		g_ptr_array_add (temp_data -> array, temp);
-	}	
-	return false;
+	if (status == 0 || g_node_depth (node) == 2) {
+		/* 얕은 복사 */
+		STOCKINFO* copy_data = (STOCKINFO*) malloc (sizeof (STOCKINFO));
+		*copy_data = *temp;
+		GNode* copy_node = g_node_new (copy_data);
+		g_node_insert (temp_data -> array, -1, copy_node);
+		
+		temp_data -> array = copy_node;
+		if (!G_NODE_IS_LEAF (node)) {
+			g_node_children_foreach (node, G_TRAVERSE_ALL, check_and_store, (gpointer) temp_data);
+		} /* Recursive call */
+	}
+	
+	free (temp_data);
+	return;
 }
 void open_close_branch (GNode* parent, bool flag) {
-	g_node_children_foreach (parent, G_TRAVERSE_ALL, activate_node, &flag);
+	if (!G_NODE_IS_LEAF (parent)) {
+		g_node_children_foreach (parent, G_TRAVERSE_ALL, activate_node, &flag);
+	}
 }
 
 GPtrArray* node_to_array (GNode* node, GPtrArray* empty_GPtrArray) {
@@ -115,17 +129,22 @@ void dump_to_parent (GNode* parent, STOCKINFO table [], int length) {
 	}
 }
 
-GPtrArray*  search_by_regex (GNode* node, char* pattern, GPtrArray* empty_GPtrArray) {
-	empty_GPtrArray = g_ptr_array_new ();
-	GPtrArray* fulled_GPtrArray = empty_GPtrArray;
-	regex_t_and_array data;
+GNode* search_by_regex (GNode* node, char* pattern, GNode* empty_GNode) {
+	/* 얕은 복사 */
+	STOCKINFO* root_data = (STOCKINFO*) malloc (sizeof (STOCKINFO));
+	*root_data = *(STOCKINFO*) node -> data;
+	empty_GNode = g_node_new (root_data);
+	/* -- ! 얕은 복사 */
+	GNode* fulled_GNode = empty_GNode;
+	regex_t_and_node data;
 	regex_t* state = &(data.state);
 	int res = regcomp (state, pattern, REG_EXTENDED);
 	char str [100];
 	regerror (res, state, str, sizeof (str));
 
-	data.array = fulled_GPtrArray;
-	g_node_traverse (node, G_PRE_ORDER, G_TRAVERSE_ALL, -1, check_and_store, (gpointer) &data);
+	data.array = fulled_GNode;
+	g_node_children_foreach (node, G_TRAVERSE_ALL, check_and_store, (gpointer) &data);
+
 	regfree (&data.state);
-	return fulled_GPtrArray;
+	return fulled_GNode;
 }

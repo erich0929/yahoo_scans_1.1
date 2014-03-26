@@ -662,34 +662,32 @@ void board_eventhandler (BOARD_WIDGET* board, GNode* root) {
 				break;
 			
 			case '\n' :
-				if ((*(int*) (board -> userdata) & 0x000f) == 1) {
-					selected_data_index = board -> firstrow_index +
-						board -> selected_index;
-					temp = (STOCKINFO*) g_ptr_array_index (
-							board -> dataTable, selected_data_index);
-					if (temp -> depth <= 2) {
-						market = g_node_find (root, G_LEVEL_ORDER, 
-								G_TRAVERSE_NON_LEAVES, (gpointer) temp);
-						temp_node = g_node_first_child (market);
-						flag = ((STOCKINFO*) (temp_node -> data)) -> IsActivated;
 
-						open_close_branch (market, !flag);
+				selected_data_index = board -> firstrow_index +
+					board -> selected_index;
+				temp = (STOCKINFO*) g_ptr_array_index (
+						board -> dataTable, selected_data_index);
+				if (temp -> depth <= 2 && (temp -> format_info & BASIS_SIGN)) {
+					market = g_node_find (root, G_LEVEL_ORDER, 
+							G_TRAVERSE_NON_LEAVES, (gpointer) temp);
+					temp_node = g_node_first_child (market);
+					flag = ((STOCKINFO*) (temp_node -> data)) -> IsActivated;
 
-						clear_board (board);
+					open_close_branch (market, !flag);
 
-						g_ptr_array_unref (board -> dataTable);
-						board -> dataTable = node_to_array (root, 
-								board -> dataTable);
+					clear_board (board);
 
-						remember_index = board -> selected_index;
-						set_rowIndex (board, 0);
-						/*set_rowIndex (board, -1);*/
-						set_rowIndex (board, remember_index);
-						board -> wndFlag = true;
-						board -> dataFlag = true;
-						update_board (board);
-					}
-					break;
+					g_ptr_array_unref (board -> dataTable);
+					board -> dataTable = node_to_array (root, 
+							board -> dataTable);
+
+					remember_index = board -> selected_index;
+					set_rowIndex (board, 0);
+					/*set_rowIndex (board, -1);*/
+					set_rowIndex (board, remember_index);
+					board -> wndFlag = true;
+					board -> dataFlag = true;
+					update_board (board);
 				}
 				break;
 			case 'o' :

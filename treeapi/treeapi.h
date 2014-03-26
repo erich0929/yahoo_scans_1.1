@@ -10,10 +10,10 @@
 #include <sys/types.h>
 #include "../stockapi/stockapi.h"
 
-typedef struct _regex_t_and_array {
+typedef struct _regex_t_and_node {
 	regex_t state;
-	GPtrArray* array;
-}regex_t_and_array;
+	GNode* array;
+}regex_t_and_node;
 
 /*
 typedef struct _STOCKINFO {
@@ -47,10 +47,10 @@ GPtrArray* array_to_GPtrArray (TreeElement table [], int length,
 */
 static void activate_node (GNode* node, gpointer data);
 static gboolean store_into_g_ptr_array (GNode* node, gpointer g_ptr_array);
-static gboolean check_and_store (GNode* node, gpointer g_ptr_array);
+static void check_and_store (GNode* node, gpointer g_ptr_array);
 void open_close_branch (GNode* node, bool flag);
 GPtrArray* node_to_array (GNode* node, GPtrArray* empty_GPtrArray);
 void dump_to_parent (GNode* parent, STOCKINFO table [], int length);
-GPtrArray*  search_by_regex (GNode* node, char* pattern, GPtrArray* empty_GPtrArray);
+GNode* search_by_regex (GNode* node, char* pattern, GNode* empty_GNode);
 
 #endif

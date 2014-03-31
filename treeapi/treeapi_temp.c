@@ -2,6 +2,18 @@
 #include "treeapi.h"
 
 /* --------- < Used by open_close_branch > ------------- */
+GNode* new_tree_node (void* userdata, int state_info, GNode* parent) {
+	TreeElement* temp = (TreeElement*) malloc (sizeof (TreeElement));
+/*	temp = {NULL, NULL, state_info, parent, NULL, userdata}; */
+	memset (temp -> base_format, 0x0, sizeof (temp -> base_format));
+	memset (temp -> format, 0x0, sizeof (temp -> format));
+	temp -> state_info = state_info;
+	temp -> parent = parent;
+	temp -> lastchild = NULL;
+	temp -> userdata = userdata;
+	return g_node_new (temp);
+}
+
 static void activate_node (GNode* node, gpointer data) {
 	TreeElement* temp = (TreeElement*) node -> data;
 	STOCKINFO* temp_stock = (STOCKINFO*) temp -> userdata; /* for debugging */
@@ -123,9 +135,11 @@ static void check_and_store (GNode* node, gpointer data) {
 	int status = regexec (&(temp_data -> state), stock_data -> symbol, 0, NULL, 0);
 	if (status == 0 || g_node_depth (node) == 2) {
 		/* 얕은 복사 */
+		/*
 		TreeElement* copy_data = (TreeElement*) malloc (sizeof (TreeElement));
 		*copy_data = *temp;
-		GNode* copy_node = g_node_new (copy_data);
+		*/
+		GNode* copy_node = new_tree_node (stock_data, IS_OPENED | IS_ACTIVATED, temp_data -> array);
 		g_node_insert (temp_data -> array, -1, copy_node);
 		
 		temp_data -> array = copy_node;
@@ -166,11 +180,11 @@ void dump_to_parent (GNode* parent, TreeElement table [], int length) {
 }
 
 GNode* search_by_regex (GNode* node, char* pattern, GNode* empty_GNode) {
-	/* 얕은 복사 */
-	TreeElement* root_data = (TreeElement*) malloc (sizeof (TreeElement));
-	*root_data = *(TreeElement*) node -> data;
-	empty_GNode = g_node_new (root_data);
-	/* -- ! 얕은 복사 */
+	TreeElement* root_data;
+	root_data = (TreeElement*) node -> data;
+	STOCKINFO* userdata = (STOCKINFO*) root_data -> userdata;
+	empty_GNode = new_tree_node (userdata, IS_OPENED | IS_ACTIVATED, NULL);
+	
 	GNode* fulled_GNode = empty_GNode;
 	regex_t_and_node data;
 	regex_t* state = &(data.state);
@@ -185,14 +199,4 @@ GNode* search_by_regex (GNode* node, char* pattern, GNode* empty_GNode) {
 	return fulled_GNode;
 }
 
-GNode* new_tree_node (void* userdata, int state_info, GNode* parent) {
-	TreeElement* temp = (TreeElement*) malloc (sizeof (TreeElement));
-/*	temp = {NULL, NULL, state_info, parent, NULL, userdata}; */
-	memset (temp -> base_format, 0x0, sizeof (temp -> base_format));
-	memset (temp -> format, 0x0, sizeof (temp -> format));
-	temp -> state_info = state_info;
-	temp -> parent = parent;
-	temp -> lastchild = NULL;
-	temp -> userdata = userdata;
-	return g_node_new (temp);
-}
+

@@ -1,5 +1,5 @@
 TARGET	:= treeapi.o
-OBJS	:= $(wildcard *.c)
+OBJS	:= treeapi_temp.c
 
 all :
 	gcc -g -c -o $(TARGET) $(OBJS) `pkg-config --cflags glib-2.0`

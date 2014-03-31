@@ -1,4 +1,5 @@
 /* Rebuilding code */
+#include "treeapi.h"
 
 #define BASIS_ACTIVATED		0x0000000f
 #define IS_ACTIVATED		0x00000000
@@ -7,15 +8,6 @@
 #define BASIS_OPENED		0x000000f0
 #define IS_OPENED			0x00000000
 #define IS_CLOSED			0x00000010
-
-typedef struct _TreeElement {
-	char base_format [10];
-	char format [40];
-	int state_info;
-	GNode* parent;
-	GNode* lastchild;
-	void* userdata;
-} TreeElement;
 
 /* --------- < Used by open_close_branch > ------------- */
 static void activate_node (GNode* node, gpointer data) {
@@ -41,47 +33,49 @@ static gboolean store_into_g_ptr_array (GNode* node, gpointer g_ptr_array) {
 		/* node is the root */
 		if (g_node_depth (node) == 1) {
 			/* initialize */
-			parent = NULL;
+			temp -> parent = NULL;
 			temp -> lastchild = g_node_last_child (node); /* lastchild */
 
-			memset (node -> base_format, 0x0, sizeof (node -> base_format));
-			memset (node -> format, 0x0, sizeof (node -> format));
+			memset (temp -> base_format, 0x0, sizeof (temp -> base_format));
+			memset (temp -> format, 0x0, sizeof (temp -> format));
 
 			/* base_format */
 			/* nothing to do */
 			/* format */
 			char sign;
 			if (!G_NODE_IS_LEAF (node)) {
-				if ((node -> state_info & BASIS_OPENED) == IS_OPENED) sign = '-';
+				if ((temp -> state_info & BASIS_OPENED) == IS_OPENED) sign = '-';
 
 				else sign = '+';
 
-				strncpy (node -> format, &sign ,1);
+				strncpy (temp -> format, &sign ,1);
 			}
 
 		}
 		/* node is not root */
 		else {
 			/* initialize */
-			memset (node -> base_format, 0x0, sizeof (node -> base_format));
-			memset (node -> format, 0x0, sizeof (node -> format));
+			memset (temp -> base_format, 0x0, sizeof (temp -> base_format));
+			memset (temp -> format, 0x0, sizeof (temp -> format));
 
 			temp -> lastchild = g_node_last_child (node); /* lastchild */
 
 			/* extend the parent's base_format */
 			GNode* parent = temp -> parent;
-			TreeElement temp_parent = (TreeElement*) parent -> data;
+			TreeElement* temp_parent = (TreeElement*) parent -> data;
 			int length = strlen (temp_parent -> base_format);
 			strncpy (temp -> base_format, temp_parent -> base_format, length);
 
 			/* base_format */
 			char base_format_link [3];
-			if ((temp_parent -> state_info & BASIS_LAST_CHILD) == IS_LAST_CHILD) {
-				base_format_link = "\t\0";
+			char* temp_base_format;
+			if ((temp_parent -> lastchild) == node) {
+				temp_base_format = "\t\0";
 			}
 			else {
-				base_format_link = "|\t";
+				temp_base_format = "|\t";
 			}
+			strncpy (base_format_link, temp_base_format, 3);			
 			length = strlen (temp -> base_format);
 			strncpy (temp -> base_format + length, base_format_link, 3);
 
@@ -90,7 +84,7 @@ static gboolean store_into_g_ptr_array (GNode* node, gpointer g_ptr_array) {
 			strncpy (temp -> format, temp -> base_format, length);
 
 			/* ARM */
-			char arm [3];
+			char* arm;
 			if (node == temp_parent -> lastchild) {
 				arm = "|-";
 			}
@@ -103,11 +97,11 @@ static gboolean store_into_g_ptr_array (GNode* node, gpointer g_ptr_array) {
 			/* SIGN */
 			char sign;
 			if (!G_NODE_IS_LEAF (node)) {
-				if ((node -> state_info & BASIS_OPENED) == IS_OPENED) sign = '-';
+				if ((temp -> state_info & BASIS_OPENED) == IS_OPENED) sign = '-';
 
 				else sign = '+';
-				length = (temp -> format);
-				strncpy (node -> format + length, &sign ,1);
+				length = strlen (temp -> format);
+				strncpy (temp -> format + length, &sign ,1);
 			}
 		}	
 
@@ -139,6 +133,13 @@ static void check_and_store (GNode* node, gpointer data) {
 	
 	free (temp_data);
 	return;
+}
+
+GPtrArray* node_to_array (GNode* node, GPtrArray* empty_GPtrArray) {
+	empty_GPtrArray = g_ptr_array_new ();
+	GPtrArray* fulled_GPtrArray = empty_GPtrArray;
+	g_node_traverse (node, G_PRE_ORDER, G_TRAVERSE_ALL, -1, store_into_g_ptr_array, (gpointer) fulled_GPtrArray);
+	return fulled_GPtrArray;
 }
 
 void open_close_branch (GNode* parent, bool flag) {
@@ -181,4 +182,14 @@ GNode* search_by_regex (GNode* node, char* pattern, GNode* empty_GNode) {
 	return fulled_GNode;
 }
 
-
+GNode* new_tree_node (void* userdata, int state_info, GNode* parent) {
+	TreeElement* temp = (TreeElement*) malloc (sizeof (TreeElement));
+/*	temp = {NULL, NULL, state_info, parent, NULL, userdata}; */
+	memset (temp -> base_format, 0x0, sizeof (temp -> base_format));
+	memset (temp -> format, 0x0, sizeof (temp -> format));
+	temp -> state_info = state_info;
+	temp -> parent = parent;
+	temp -> lastchild = NULL;
+	temp -> userdata = userdata;
+	return g_node_new (temp);
+}

@@ -5,7 +5,7 @@
 
 #include "./stockapi/stockapi.h"
 #include "./boardwidget/boardwidget.h"
-#include "./treeapi/treeapi.h"
+#include "./treeapi/treeapi_temp.h"
 
 #define WHAT_ABOUT_TABLE	0x000F
 #define TABLE_IS_MAIN	0x0001
@@ -20,59 +20,15 @@ static void print_main_board_header (WINDOW* wnd, int colindex) {
 }
 
 static void print_main_board_data (WINDOW* wnd, gpointer data, int colindex){
-	STOCKINFO* temp = (STOCKINFO*) data;
-	int pipe = (temp -> format_info & BASIS_PIPE) >> 12;
-	int count_tab = (temp -> format_info & BASIS_TAB) >> 8;
-	int arm = (temp -> format_info & BASIS_ARM) >> 4;
-	int sign = (temp -> format_info & BASIS_SIGN);
-	char format [30];
-	memset (format, 0x0, sizeof (format));
-	char* temp_ch = format;
-	int i = 0;
-	int t = 0;
-	for (i = 0, t = 1; i < count_tab; i++) {
-		int length = strlen (format);
-		char tab_ch = '\t';
-		strncpy (temp_ch + length, &tab_ch, 1);
-		if (pipe == 1 && t == 1) {
-			length = strlen (format);
-			char pipe_ch = '|';
-			strncpy (temp_ch + length, &pipe_ch, 1);
-			t--;
-		}
-	}
-	int length;
-	char* arm_ch;
-	if (arm == 1) {
-		arm_ch = "|-- ";
-		length = strlen (format);
-		strncpy (temp_ch + length, arm_ch, 4);
-	}
-	else if (arm == 2) {
-		arm_ch = "*-- ";
-		length = strlen (format);
-		strncpy (temp_ch + length, arm_ch, 4);
-	}
-
-
-	char* sign_ch;
-	if (sign == 1) {
-		sign_ch = "+ ";
-		length = strlen (format);
-		strncpy (temp_ch + length, sign_ch, 2);
-	}
-	else if (sign == 2) {
-		sign_ch = "- ";
-		length = strlen (format);
-		strncpy ( temp_ch + length, sign_ch, 2);
-	}
-
-	length = strlen (format);
-	strcpy (temp_ch + length, temp -> symbol);
-	length = strlen (format);
-	temp_ch [length] = '\0';
-
-	wprintw (wnd, "%s", format);
+	TreeElement* temp = (TreeElement*) data;
+	STOCKINFO* temp_stock = (STOCKINFO*) temp -> userdata;
+	char temp_ch [60];
+	int length = strlen (temp -> format);
+	strncpy (temp_ch, temp -> format, length);
+	int position = strlen (temp_ch);
+	length = strlen (temp_stock -> symbol);
+	strncpy (temp_ch + position, temp_stock -> symbol, length);	
+	wprintw (wnd, "%s", temp_ch);
 }
 
 STOCKINFO WORLD = {"World", NULL, true, 1, 0x0000};
@@ -96,15 +52,30 @@ STOCKINFO KOSPI_LIST [] = 	{
 int main(int argc, char* argv[])
 {
 	/* initialize the stock' informations */
-	GNode* world = g_node_new (&WORLD);
-	GNode* nyse = g_node_new (&NYSE);
+	GNode* world = new_tree_node ((void*) &world, IS_OPENED | IS_ACTIVATED,
+								NULL);
+
+	GNode* nyse = new_tree_node ((void) &NYSE, IS_CLOSED | IS_ACTIVATED, world);
+
 	g_node_insert (world, -1, nyse);
-	dump_to_parent (nyse, NYSE_LIST, sizeof (NYSE_LIST) / sizeof (STOCKINFO));
+	/* dump_to_parent (nyse, NYSE_LIST, sizeof (NYSE_LIST) / sizeof (STOCKINFO)); */
+	int i;
+	for (i = 0; i < sizeof (KOSPI_LIST) / sizeof (STOCKINFO); i++) {
+			GNode* temp_node = new_tree_node (&KOSPI_LIST [i], 
+										IS_CLOSED | IS_NOT_ACTIVATED);
+		g_node_insert (kospi, temp_node);
+	}
 
-	GNode* kospi = g_node_new (&KOSPI);
+	GNode* kospi = new_tree_node ((void*) &KOSPI, IS_CLOSED | IS_ACTIVATED, world);
 	g_node_insert (world, -1, kospi);
-	dump_to_parent (kospi, KOSPI_LIST, sizeof (KOSPI_LIST) / sizeof (STOCKINFO));
 
+	/* dump_to_parent (kospi, KOSPI_LIST, sizeof (KOSPI_LIST) / sizeof (STOCKINFO)); */
+
+	for (i = 0; i < sizeof (KOSPI_LIST) / sizeof (STOCKINFO); i++) {
+		temp_node = new_tree_node (&KOSPI_LIST [i], 
+										IS_CLOSED | IS_NOT_ACTIVATED);
+		g_node_insert (kospi, temp_node);
+	}
 	GPtrArray* main_data_table;
 	GPtrArray* result_data_table = g_ptr_array_new ();
 	GNode* result_root;

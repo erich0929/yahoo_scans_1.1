@@ -10,24 +10,20 @@
 #include <sys/types.h>
 #include "../stockapi/stockapi.h"
 
+typedef struct _TreeElement {
+	char base_format [10];
+	char format [40];
+	int state_info;
+	GNode* parent;
+	GNode* lastchild;
+	void* userdata;
+} TreeElement;
+
 typedef struct _regex_t_and_node {
 	regex_t state;
 	GNode* array;
 }regex_t_and_node;
 
-/*
-typedef struct _STOCKINFO {
-	char* symbol;
-	char* code;
-	bool IsActivated;
-} STOCKINFO;
-*/
-
-typedef	struct _TreeElement {
-	int id;
-	bool IsActivated;
-	gpointer data;	
-} TreeElement; /* IMPORTANCE : TreeElement table (array) should be ended by {0, NULL, NULL} !! */
 
 /*
 GPtrArray* array_to_GPtrArray (TreeElement table [], int length,
@@ -50,7 +46,7 @@ static gboolean store_into_g_ptr_array (GNode* node, gpointer g_ptr_array);
 static void check_and_store (GNode* node, gpointer g_ptr_array);
 void open_close_branch (GNode* node, bool flag);
 GPtrArray* node_to_array (GNode* node, GPtrArray* empty_GPtrArray);
-void dump_to_parent (GNode* parent, STOCKINFO table [], int length);
+void dump_to_parent (GNode* parent, TreeElement table [], int length);
 GNode* search_by_regex (GNode* node, char* pattern, GNode* empty_GNode);
 
 #endif

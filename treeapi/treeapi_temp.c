@@ -1,17 +1,10 @@
 /* Rebuilding code */
 #include "treeapi.h"
 
-#define BASIS_ACTIVATED		0x0000000f
-#define IS_ACTIVATED		0x00000000
-#define IS_NOT_ACTIVATED	0x00000001
-
-#define BASIS_OPENED		0x000000f0
-#define IS_OPENED			0x00000000
-#define IS_CLOSED			0x00000010
-
 /* --------- < Used by open_close_branch > ------------- */
 static void activate_node (GNode* node, gpointer data) {
 	TreeElement* temp = (TreeElement*) node -> data;
+	STOCKINFO* temp_stock = (STOCKINFO*) temp -> userdata; /* for debugging */
 	/* remove activate flag */
 	temp -> state_info -= (temp -> state_info & BASIS_ACTIVATED);
 	/* and redefine */
@@ -20,15 +13,15 @@ static void activate_node (GNode* node, gpointer data) {
 			&& (temp -> state_info & BASIS_OPENED) == IS_OPENED) {
 		open_close_branch (node, flag); /* Recursive call */
 	}
-	if (flag == true) {
+	if (flag == IS_OPENED) {
 		temp -> state_info += IS_ACTIVATED;
-	}
+	}	
 	else temp -> state_info += IS_NOT_ACTIVATED;
 }
 
 static gboolean store_into_g_ptr_array (GNode* node, gpointer g_ptr_array) {
 	TreeElement* temp = (TreeElement*) node -> data;
-	
+	STOCKINFO* temp_stock = (STOCKINFO*) temp -> userdata; /* for debugging */
 	if ((temp -> state_info & BASIS_ACTIVATED) == IS_ACTIVATED) {
 		/* node is the root */
 		if (g_node_depth (node) == 1) {
@@ -103,10 +96,14 @@ static gboolean store_into_g_ptr_array (GNode* node, gpointer g_ptr_array) {
 				length = strlen (temp -> format);
 				strncpy (temp -> format + length, &sign ,1);
 			}
+			else {
+				temp -> state_info += IS_LEAF;
+			}
 		}	
 
 		g_ptr_array_add (g_ptr_array, temp);
 	}
+	return false;
 }
 
 static void check_and_store (GNode* node, gpointer data) {
@@ -142,7 +139,7 @@ GPtrArray* node_to_array (GNode* node, GPtrArray* empty_GPtrArray) {
 	return fulled_GPtrArray;
 }
 
-void open_close_branch (GNode* parent, bool flag) {
+void open_close_branch (GNode* parent, int flag) {
 	if (!G_NODE_IS_LEAF (parent)) {
 		/* remove open flag */
 		TreeElement* temp = (TreeElement*) parent -> data;

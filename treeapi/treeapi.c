@@ -83,7 +83,7 @@ static void check_and_store (GNode* node, gpointer data) {
 	free (temp_data);
 	return;
 }
-void open_close_branch (GNode* parent, bool flag) {
+void open_close_branch (GNode* parent, int flag) {
 	if (!G_NODE_IS_LEAF (parent)) {
 		g_node_children_foreach (parent, G_TRAVERSE_ALL, activate_node, &flag);
 	}

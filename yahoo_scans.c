@@ -5,7 +5,7 @@
 
 #include "./stockapi/stockapi.h"
 #include "./boardwidget/boardwidget.h"
-#include "./treeapi/treeapi_temp.h"
+#include "./treeapi/treeapi.h"
 
 #define WHAT_ABOUT_TABLE	0x000F
 #define TABLE_IS_MAIN	0x0001
@@ -23,6 +23,7 @@ static void print_main_board_data (WINDOW* wnd, gpointer data, int colindex){
 	TreeElement* temp = (TreeElement*) data;
 	STOCKINFO* temp_stock = (STOCKINFO*) temp -> userdata;
 	char temp_ch [60];
+	memset (temp_ch, 0x0, sizeof (temp_ch));
 	int length = strlen (temp -> format);
 	strncpy (temp_ch, temp -> format, length);
 	int position = strlen (temp_ch);
@@ -52,18 +53,18 @@ STOCKINFO KOSPI_LIST [] = 	{
 int main(int argc, char* argv[])
 {
 	/* initialize the stock' informations */
-	GNode* world = new_tree_node ((void*) &world, IS_OPENED | IS_ACTIVATED,
+	GNode* world = new_tree_node ((void*) &WORLD, IS_OPENED | IS_ACTIVATED,
 								NULL);
 
-	GNode* nyse = new_tree_node ((void) &NYSE, IS_CLOSED | IS_ACTIVATED, world);
+	GNode* nyse = new_tree_node ((void*) &NYSE, IS_CLOSED | IS_ACTIVATED, world);
 
 	g_node_insert (world, -1, nyse);
 	/* dump_to_parent (nyse, NYSE_LIST, sizeof (NYSE_LIST) / sizeof (STOCKINFO)); */
 	int i;
-	for (i = 0; i < sizeof (KOSPI_LIST) / sizeof (STOCKINFO); i++) {
-			GNode* temp_node = new_tree_node (&KOSPI_LIST [i], 
-										IS_CLOSED | IS_NOT_ACTIVATED);
-		g_node_insert (kospi, temp_node);
+	for (i = 0; i < sizeof (NYSE_LIST) / sizeof (STOCKINFO); i++) {
+		GNode* temp_node = new_tree_node ((void*) &NYSE_LIST [i], 
+										IS_CLOSED | IS_NOT_ACTIVATED, nyse);
+		g_node_insert (nyse, -1, temp_node);
 	}
 
 	GNode* kospi = new_tree_node ((void*) &KOSPI, IS_CLOSED | IS_ACTIVATED, world);
@@ -72,9 +73,9 @@ int main(int argc, char* argv[])
 	/* dump_to_parent (kospi, KOSPI_LIST, sizeof (KOSPI_LIST) / sizeof (STOCKINFO)); */
 
 	for (i = 0; i < sizeof (KOSPI_LIST) / sizeof (STOCKINFO); i++) {
-		temp_node = new_tree_node (&KOSPI_LIST [i], 
-										IS_CLOSED | IS_NOT_ACTIVATED);
-		g_node_insert (kospi, temp_node);
+		GNode* temp_node = new_tree_node ((void*) &KOSPI_LIST [i], 
+										IS_CLOSED | IS_NOT_ACTIVATED, kospi);
+		g_node_insert (kospi, -1, temp_node);
 	}
 	GPtrArray* main_data_table;
 	GPtrArray* result_data_table = g_ptr_array_new ();

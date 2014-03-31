@@ -1,5 +1,5 @@
 #include "boardwidget.h"
-
+#include "../treeapi/treeapi.h"
 /*
 typedef struct _POINT_INFO {
 
@@ -628,10 +628,10 @@ void board_eventhandler (BOARD_WIDGET* board, GNode* root) {
 	
 	int ch;
 	int selected_data_index;
-	STOCKINFO* temp;
+	TreeElement* temp;
 	GNode* temp_node;
 	GNode* market;
-	bool flag;
+	int flag;
 	int remember_index;
 	int i;
 
@@ -665,15 +665,19 @@ void board_eventhandler (BOARD_WIDGET* board, GNode* root) {
 
 				selected_data_index = board -> firstrow_index +
 					board -> selected_index;
-				temp = (STOCKINFO*) g_ptr_array_index (
+				temp = (TreeElement*) g_ptr_array_index (
 						board -> dataTable, selected_data_index);
-				if (temp -> depth <= 2 && (temp -> format_info & BASIS_SIGN)) {
+				if ((temp -> state_info & BASIS_LEAF) == IS_NOT_LEAF) {
 					market = g_node_find (root, G_LEVEL_ORDER, 
 							G_TRAVERSE_NON_LEAVES, (gpointer) temp);
 					temp_node = g_node_first_child (market);
-					flag = ((STOCKINFO*) (temp_node -> data)) -> IsActivated;
+					flag = (temp -> state_info & BASIS_OPENED);
+					if (flag == IS_OPENED) {
+						flag = IS_CLOSED;
+					}
+					else flag = IS_OPENED;
 
-					open_close_branch (market, !flag);
+					open_close_branch (market, flag);
 
 					clear_board (board);
 

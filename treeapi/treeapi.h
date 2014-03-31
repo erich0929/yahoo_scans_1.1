@@ -10,6 +10,19 @@
 #include <sys/types.h>
 #include "../stockapi/stockapi.h"
 
+#define BASIS_ACTIVATED		0x0000000f
+#define IS_ACTIVATED		0x00000000
+#define IS_NOT_ACTIVATED	0x00000001
+
+#define BASIS_OPENED		0x000000f0
+#define IS_OPENED			0x00000000
+#define IS_CLOSED			0x00000010
+
+#define BASIS_LEAF			0x00000f00
+#define IS_LEAF				0x00000100
+#define IS_NOT_LEAF			0x00000000
+
+
 typedef struct _TreeElement {
 	char base_format [10];
 	char format [40];
@@ -44,7 +57,7 @@ GPtrArray* array_to_GPtrArray (TreeElement table [], int length,
 static void activate_node (GNode* node, gpointer data);
 static gboolean store_into_g_ptr_array (GNode* node, gpointer g_ptr_array);
 static void check_and_store (GNode* node, gpointer g_ptr_array);
-void open_close_branch (GNode* node, bool flag);
+void open_close_branch (GNode* node, int flag);
 GPtrArray* node_to_array (GNode* node, GPtrArray* empty_GPtrArray);
 void dump_to_parent (GNode* parent, TreeElement table [], int length);
 GNode* search_by_regex (GNode* node, char* pattern, GNode* empty_GNode);

@@ -62,12 +62,18 @@ static gboolean store_into_g_ptr_array (GNode* node, gpointer g_ptr_array) {
 			/* base_format */
 			char base_format_link [3];
 			char* temp_base_format;
-			if ((temp_parent -> lastchild) == node) {
-				temp_base_format = "\t\0";
+			TreeElement* temp_grand_parent = NULL;
+			if (temp_parent -> parent) {
+				GNode* grand_parent = temp_parent -> parent;
+				temp_grand_parent = grand_parent -> data;
+				if (temp_grand_parent -> lastchild == temp -> parent)
+					temp_base_format = "\t\0";
+				else temp_base_format = "|\t";
 			}
 			else {
-				temp_base_format = "|\t";
+				temp_base_format = "\t\0";
 			}
+
 			strncpy (base_format_link, temp_base_format, 3);			
 			length = strlen (temp -> base_format);
 			strncpy (temp -> base_format + length, base_format_link, 3);
@@ -79,10 +85,10 @@ static gboolean store_into_g_ptr_array (GNode* node, gpointer g_ptr_array) {
 			/* ARM */
 			char* arm;
 			if (node == temp_parent -> lastchild) {
-				arm = "|-";
+				arm = "*-";
 			}
 			else {
-				arm = "*-";
+				arm = "|-";
 			}
 			length = strlen (temp -> format);
 			strncpy (temp -> format + length, arm, 3);

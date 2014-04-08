@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
 	}
 	GPtrArray* main_data_table;
 	GPtrArray* result_data_table = g_ptr_array_new ();
-	GNode* result_root;
+	GNode* result_root = NULL;
 
 	main_data_table = node_to_array (world, main_data_table);
 
@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
 					remember_lastrow = main_board -> lastrow_index;
 					remember_selected_index = main_board -> selected_index;
 				}
-			
+
 				while ((ch = getch ()) != '\n') {
 					switch (ch) {
 						case KEY_BACKSPACE :
@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
 							break;
 
 						default :
-
+							if (result_root != NULL) g_node_destroy (result_root);
 							g_ptr_array_unref (result_data_table);
 
 							length = strlen (buffer);
@@ -177,13 +177,15 @@ int main(int argc, char* argv[])
 								wrefresh (search_wnd);
 							}
 							memset (regex_exp, 0x0, sizeof (regex_exp));
-				/*			strncpy (regex_exp, &regex_head, 1); */
+							/*			strncpy (regex_exp, &regex_head, 1); */
 							strncpy (regex_exp, buffer, 30); 
-				/*			length = strlen (regex_exp);
-							strncpy (regex_exp + length, &regex_tail, 1);*/
-							
+							/*			length = strlen (regex_exp);
+										strncpy (regex_exp + length, &regex_tail, 1);*/
+
 							result_root = search_by_regex (world, regex_exp, result_root);
-							main_node = result_root;
+					
+							main_node = result_root; /* is copied with world */
+					
 							result_data_table = node_to_array (result_root, result_data_table);
 							clear_board (main_board);
 							main_board -> dataTable = result_data_table;
@@ -194,9 +196,32 @@ int main(int argc, char* argv[])
 
 							break;
 					}
+
 				}
 				curs_set (0);
 				nodelay (stdscr, true);
+				break;
+			
+			case 't' :
+				if ((*(int*) (main_board -> userdata) & WHAT_ABOUT_TABLE) == TABLE_IS_SEARCH_RESULT) {
+					main_board -> dataTable = remember_dataTable;
+					main_board -> firstrow_index = remember_firstrow;
+					main_board -> lastrow_index = remember_lastrow;
+					main_board -> selected_index = remember_selected_index;
+					main_board -> userdata = (void*) &main_data_table_flag;
+					main_node = world;
+
+					clear_board (main_board);
+					set_rowIndex (main_board, 0);
+					set_rowIndex (main_board, remember_selected_index);
+					main_board -> wndFlag = true;
+					main_board -> dataFlag = true;
+					update_board (main_board);
+					inactivate_board (main_board);
+				}
+
+				break;
+		
 			default :
 				break;
 		}
@@ -211,4 +236,3 @@ int main(int argc, char* argv[])
 	endwin ();
 	return 0;
 }
-

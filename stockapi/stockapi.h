@@ -33,9 +33,6 @@ typedef struct _STOCK {
 typedef struct _STOCKINFO {
 	char* symbol;
 	char* code;
-	bool IsActivated;
-	int depth;
-	int format_info;
 } STOCKINFO;
 
 typedef struct _BufferStruct {

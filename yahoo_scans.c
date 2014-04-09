@@ -6,6 +6,8 @@
 #include "./stockapi/stockapi.h"
 #include "./boardwidget/boardwidget.h"
 #include "./treeapi/treeapi.h"
+#include "./commoninfo.h"
+#include "./kospiInfo.h"
 
 #define WHAT_ABOUT_TABLE	0x000F
 #define TABLE_IS_MAIN	0x0001
@@ -32,29 +34,14 @@ static void print_main_board_data (WINDOW* wnd, gpointer data, int colindex){
 	wprintw (wnd, "%s", temp_ch);
 }
 
-STOCKINFO WORLD = {"World", NULL, true, 1, 0x0000};
-STOCKINFO NYSE = {"NYSE", NULL, true, 2, 0x0000};
-STOCKINFO KOSPI = {"KOSPI", NULL, true, 2, 0x0000};
 
-STOCKINFO NYSE_LIST [] = 	{
-	{"APPLE", "14255.NS", false, 3, 0x0000},
-	{"MicroSoft", "14547.NS", false, 3, 0x0000},
-	{"Boeing", "17554.NS", false, 3, 0x0000},
-};
-
-STOCKINFO KOSPI_LIST [] = 	{
-	{"SAMSUNG", "15478.KS", false, 3},
-	{"LG", "15467.KS", false, 3},
-	{"Hyundai", "78231.KS", false, 3},
-	{"KIA", "25236.KS", false, 3}
-};
 
 
 int main(int argc, char* argv[])
 {
 	/* initialize the stock' informations */
 	GNode* world = new_tree_node ((void*) &WORLD, IS_OPENED | IS_ACTIVATED,
-								NULL);
+			NULL);
 
 	GNode* nyse = new_tree_node ((void*) &NYSE, IS_CLOSED | IS_ACTIVATED, world);
 
@@ -63,7 +50,7 @@ int main(int argc, char* argv[])
 	int i;
 	for (i = 0; i < sizeof (NYSE_LIST) / sizeof (STOCKINFO); i++) {
 		GNode* temp_node = new_tree_node ((void*) &NYSE_LIST [i], 
-										IS_CLOSED | IS_NOT_ACTIVATED, nyse);
+				IS_CLOSED | IS_NOT_ACTIVATED, nyse);
 		g_node_insert (nyse, -1, temp_node);
 	}
 
@@ -74,9 +61,10 @@ int main(int argc, char* argv[])
 
 	for (i = 0; i < sizeof (KOSPI_LIST) / sizeof (STOCKINFO); i++) {
 		GNode* temp_node = new_tree_node ((void*) &KOSPI_LIST [i], 
-										IS_CLOSED | IS_NOT_ACTIVATED, kospi);
+				IS_CLOSED | IS_NOT_ACTIVATED, kospi);
 		g_node_insert (kospi, -1, temp_node);
 	}
+
 	GPtrArray* main_data_table;
 	GPtrArray* result_data_table = g_ptr_array_new ();
 	GNode* result_root = NULL;
@@ -162,6 +150,29 @@ int main(int argc, char* argv[])
 							wrefresh (search_wnd);
 							wprintw (search_wnd, buffer);
 							wrefresh (search_wnd);							
+
+							/* 검색 */
+							if (length = strlen (buffer)) {
+								memset (regex_exp, 0x0, sizeof (regex_exp));
+								/*			strncpy (regex_exp, &regex_head, 1); */
+								strncpy (regex_exp, buffer, 30); 
+								/*			length = strlen (regex_exp);
+											strncpy (regex_exp + length, &regex_tail, 1);*/
+
+								result_root = search_by_regex (world, regex_exp, result_root);
+
+								main_node = result_root; /* is copied with world */
+
+								result_data_table = node_to_array (result_root, result_data_table);
+								clear_board (main_board);
+								main_board -> dataTable = result_data_table;
+								main_board -> firstrow_index = 0;
+								main_board -> selected_index = 0;
+								main_board -> userdata = (void*) &result_data_flag;
+								set_rowIndex (main_board, 0);
+								update_board (main_board);
+								inactivate_board (main_board);
+							}
 							break;
 
 						default :
@@ -176,6 +187,8 @@ int main(int argc, char* argv[])
 								wprintw (search_wnd, buffer);
 								wrefresh (search_wnd);
 							}
+
+							/* 검색 */
 							memset (regex_exp, 0x0, sizeof (regex_exp));
 							/*			strncpy (regex_exp, &regex_head, 1); */
 							strncpy (regex_exp, buffer, 30); 
@@ -189,6 +202,8 @@ int main(int argc, char* argv[])
 							result_data_table = node_to_array (result_root, result_data_table);
 							clear_board (main_board);
 							main_board -> dataTable = result_data_table;
+							main_board -> firstrow_index = 0;
+							main_board -> selected_index = 0;
 							main_board -> userdata = (void*) &result_data_flag;
 							set_rowIndex (main_board, 0);
 							update_board (main_board);

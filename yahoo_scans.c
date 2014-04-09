@@ -17,13 +17,14 @@ static void print_main_board_header (WINDOW* wnd, int rows);
 static void print_main_board_data (WINDOW* wnd, gpointer data, int rows);
 
 static void print_main_board_header (WINDOW* wnd, int colindex) {
-	wprintw (wnd, "%s", "Select a stock you want to scan.");
+	mvwprintw (wnd, 0, 0, "%s", "Select a stock you want to scan.");
 	wrefresh (wnd);
 }
 
 static void print_main_board_data (WINDOW* wnd, gpointer data, int colindex){
 	TreeElement* temp = (TreeElement*) data;
 	STOCKINFO* temp_stock = (STOCKINFO*) temp -> userdata;
+/*
 	char temp_ch [60];
 	memset (temp_ch, 0x0, sizeof (temp_ch));
 	int length = strlen (temp -> format);
@@ -32,6 +33,8 @@ static void print_main_board_data (WINDOW* wnd, gpointer data, int colindex){
 	length = strlen (temp_stock -> symbol);
 	strncpy (temp_ch + position, temp_stock -> symbol, length);	
 	wprintw (wnd, "%s", temp_ch);
+*/
+	mvwprintw (wnd, 0, 0, "%s%s", temp -> format, temp_stock -> symbol);
 }
 
 
@@ -84,7 +87,7 @@ int main(int argc, char* argv[])
 
 	int main_data_table_flag = TABLE_IS_MAIN;
 	/* initialize the main_board widget */
-	BOARD_WIDGET* main_board = new_board (main_board, 20, 1, 1, 33,
+	BOARD_WIDGET* main_board = new_board (main_board, 20, 1, 1, 63,
 			&main_board_point_info, main_data_table,
 			print_main_board_header, 
 			print_main_board_data, (void*) &main_data_table_flag);
@@ -94,10 +97,10 @@ int main(int argc, char* argv[])
 	inactivate_board (main_board);
 
 	/* search_win */
-	WINDOW* box_search_wnd = newwin (3, 35, 26, 3);
+	WINDOW* box_search_wnd = newwin (3, 65, 26, 3);
 	box (box_search_wnd, ACS_VLINE, ACS_HLINE);
 	wrefresh (box_search_wnd);
-	WINDOW* search_wnd = subwin (box_search_wnd, 1, 20, 27, 13);
+	WINDOW* search_wnd = subwin (box_search_wnd, 1, 50, 27, 13);
 	wrefresh (search_wnd);
 	mvwprintw (box_search_wnd, 1, 1, "Search : ");
 	wrefresh (box_search_wnd);
@@ -122,7 +125,7 @@ int main(int argc, char* argv[])
 	int result_data_flag = TABLE_IS_SEARCH_RESULT;
 
 	GNode* main_node = world;
-	while ((ch = getch ()) != KEY_F(1)) {
+	while ((ch = getch ()) != KEY_F(2)) {
 		switch (ch) {
 			/* form window loop */
 			case 'b' :

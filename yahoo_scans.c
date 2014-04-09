@@ -18,7 +18,6 @@ static void print_main_board_data (WINDOW* wnd, gpointer data, int rows);
 
 static void print_main_board_header (WINDOW* wnd, int colindex) {
 	mvwprintw (wnd, 0, 0, "%s", "Select a stock you want to scan.");
-	wrefresh (wnd);
 }
 
 static void print_main_board_data (WINDOW* wnd, gpointer data, int colindex){

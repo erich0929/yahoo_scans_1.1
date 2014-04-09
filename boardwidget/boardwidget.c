@@ -269,7 +269,6 @@ void clear_board (BOARD_WIDGET* board) {
 	WINDOW** rowContainer;
 	int i, j;
 	/* ------------- <CLEAR VIEW> ------------- */
-	board -> wndFlag = true;
 	if (board -> wndFlag == true) {
 		rowContainer = (WINDOW**) g_ptr_array_index (board -> wndTable , board -> selected_index);
 		for (j = 0; j < board -> col; j++) {
@@ -284,23 +283,13 @@ void clear_board (BOARD_WIDGET* board) {
 
 	/* ------------- <CLEAR DATA> ---------------- */
 	if (board -> dataFlag == true) {
-		/*
-		for (i = 0; i < board -> wndTable -> len; i++) {
+		for (i = 0; i < board -> wndTable -> len; i++) { /* debug : i < row */
 			rowContainer = (WINDOW**) g_ptr_array_index (board -> wndTable, i);
 			for (j = 0; j < board -> col; j++) {
-				werase (rowContainer [j]);
-				wrefresh (rowContainer [j]);
+				werase (rowContainer [j]); /* clear data */
+				/* wmove (rowContainer [j], 0 , 0); */
+				/* wrefresh (rowContainer [j]); */
 			}
-		}
-		*/
-		wmove (board -> mainWnd, 1, 0);
-		wclrtobot (board -> mainWnd);
-		box (board -> mainWnd, ACS_VLINE, ACS_HLINE);
-		wrefresh (board -> mainWnd);
-		for (j = 0; j < board -> col; j++) {
-			wbkgd (board -> headerWnd, board -> base_color | A_BOLD);
-			board -> printHeader (board -> headerWnd, j);
-			wrefresh (board -> headerWnd);	
 		}
 	}
 
@@ -313,12 +302,11 @@ void update_board (BOARD_WIDGET* board) {
 	WINDOW** rowContainer;	
 
 	/* ------------- <VIEW UPDATE> --------------- */
-	board -> wndFlag = true;
+
 	if (board -> wndFlag == true) {
 		rowContainer = (WINDOW**) g_ptr_array_index (board -> wndTable, board -> selected_index);
 
 		for (j = 0; j < board -> col; j++) {
-			wmove (rowContainer [j], 0, 0);
 			wbkgd (rowContainer [j], board -> selected_color | A_BOLD);
 			wrefresh (rowContainer [j]);
 		}
@@ -339,7 +327,6 @@ void update_board (BOARD_WIDGET* board) {
 			recordset = g_ptr_array_index (board -> dataTable, i);
 			for (j = 0; j < board -> col; j++) {
 				wattron (rowContainer [j], A_BOLD);
-				/* wmove (rowContainer [j], 0, 0); */
 				board -> printData (rowContainer [j], (gpointer) recordset, j);
 				wrefresh (rowContainer [j]);
 			}
@@ -710,7 +697,7 @@ void board_eventhandler (BOARD_WIDGET* board, GNode* root) {
 				option_handler (board);
 				break;
 		}
-		usleep (1000);
+		usleep (500);
 	}
 	
 	inactivate_board (board);

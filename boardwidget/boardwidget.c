@@ -288,12 +288,11 @@ void clear_board (BOARD_WIDGET* board) {
 			for (j = 0; j < board -> col; j++) {
 				werase (rowContainer [j]); /* clear data */
 				/* wmove (rowContainer [j], 0 , 0); */
-				/* wrefresh (rowContainer [j]); */
+				/* wrefresh (rowContainer [j]); */ /* 스크롤 압박의 주범 */
 			}
 		}
 	}
-
-
+	
 	/* ------------- </CLEAR DATA> ---------------- */
 }
 void update_board (BOARD_WIDGET* board) {
@@ -341,7 +340,6 @@ void update_board (BOARD_WIDGET* board) {
 	board -> dataFlag = true;
 
 	/* ------------- </SET FLAG MEMBERS> ------------ */
-
 }			
 
 void scrolldown_handler (BOARD_WIDGET* board) {
@@ -679,7 +677,7 @@ void board_eventhandler (BOARD_WIDGET* board, GNode* root) {
 					open_close_branch (market, flag);
 
 					clear_board (board);
-
+					touchwin (board -> mainWnd);
 					g_ptr_array_unref (board -> dataTable);
 					board -> dataTable = node_to_array (root, 
 							board -> dataTable);

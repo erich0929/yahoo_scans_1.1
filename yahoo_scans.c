@@ -17,7 +17,8 @@ static void print_main_board_header (WINDOW* wnd, int rows);
 static void print_main_board_data (WINDOW* wnd, gpointer data, int rows);
 
 static void print_main_board_header (WINDOW* wnd, int colindex) {
-	mvwprintw (wnd, 0, 0, "%s", "Select a stock you want to scan.");
+	wprintw (wnd, "%s", "Select a stock you want to scan.");
+
 }
 
 static void print_main_board_data (WINDOW* wnd, gpointer data, int colindex){
@@ -33,7 +34,7 @@ static void print_main_board_data (WINDOW* wnd, gpointer data, int colindex){
 	strncpy (temp_ch + position, temp_stock -> symbol, length);	
 	wprintw (wnd, "%s", temp_ch);
 */
-	mvwprintw (wnd, 0, 0, "%s%s", temp -> format, temp_stock -> symbol);
+	wprintw (wnd, "%s%s", temp -> format, temp_stock -> symbol);
 }
 
 

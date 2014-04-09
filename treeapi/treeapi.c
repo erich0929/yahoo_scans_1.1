@@ -1,77 +1,145 @@
+/* Rebuilding code */
 #include "treeapi.h"
 
 /* --------- < Used by open_close_branch > ------------- */
-static void activate_node (GNode* node, gpointer data) {
-	STOCKINFO* temp = (STOCKINFO*) node -> data;
-	bool flag = *((bool*) data);
-	if (flag == false && g_node_depth (node) == 2) {
-		open_close_branch (node, flag); /* Recursive call */
-	}
-	if (flag == true) {
-		temp -> IsActivated = true;
-	}
-	else temp -> IsActivated = false;
+GNode* new_tree_node (void* userdata, int state_info, GNode* parent) {
+	TreeElement* temp = (TreeElement*) malloc (sizeof (TreeElement));
+/*	temp = {NULL, NULL, state_info, parent, NULL, userdata}; */
+	memset (temp -> base_format, 0x0, sizeof (temp -> base_format));
+	memset (temp -> format, 0x0, sizeof (temp -> format));
+	temp -> state_info = state_info;
+	temp -> parent = parent;
+	temp -> lastchild = NULL;
+	temp -> userdata = userdata;
+	return g_node_new (temp);
 }
 
-/* --------- < Used by node_to_array > ----------- */
+static void activate_node (GNode* node, gpointer data) {
+	TreeElement* temp = (TreeElement*) node -> data;
+	STOCKINFO* temp_stock = (STOCKINFO*) temp -> userdata; /* for debugging */
+	/* remove activate flag */
+	temp -> state_info -= (temp -> state_info & BASIS_ACTIVATED);
+	/* and redefine */
+	int flag = *(int*) data;
+	if ((flag & BASIS_OPENED) == IS_CLOSED && !G_NODE_IS_LEAF (node)
+			&& (temp -> state_info & BASIS_OPENED) == IS_OPENED) {
+		open_close_branch (node, flag); /* Recursive call */
+	}
+	if (flag == IS_OPENED) {
+		temp -> state_info += IS_ACTIVATED;
+	}	
+	else temp -> state_info += IS_NOT_ACTIVATED;
+}
+
 static gboolean store_into_g_ptr_array (GNode* node, gpointer g_ptr_array) {
-	STOCKINFO* temp = (STOCKINFO*) node -> data;
+	TreeElement* temp = (TreeElement*) node -> data;
+	STOCKINFO* temp_stock = (STOCKINFO*) temp -> userdata; /* for debugging */
+	if ((temp -> state_info & BASIS_ACTIVATED) == IS_ACTIVATED) {
+		/* node is the root */
+		if (g_node_depth (node) == 1) {
+			/* initialize */
+			temp -> parent = NULL;
+			temp -> lastchild = g_node_last_child (node); /* lastchild */
 
-	if (temp -> IsActivated == true) {
+			memset (temp -> base_format, 0x0, sizeof (temp -> base_format));
+			memset (temp -> format, 0x0, sizeof (temp -> format));
 
-		temp -> format_info = 0x000;
-		/* pipe info */
-		if (g_node_depth (node) == 3) {
-			GNode* root = g_node_get_root (node);
-			GNode* last_market = g_node_last_child (root);
-			GNode* first_sibling = g_node_first_sibling (node);
-			if (first_sibling != g_node_first_child (last_market)) {
-				temp -> format_info = 0x1000;
+			/* base_format */
+			/* nothing to do */
+			/* format */
+			char sign;
+			if (!G_NODE_IS_LEAF (node)) {
+				if ((temp -> state_info & BASIS_OPENED) == IS_OPENED) sign = '-';
+
+				else sign = '+';
+
+				strncpy (temp -> format, &sign ,1);
 			}
-		}
 
-		/* tabchar info */
-		int depth;
-		if ((depth = g_node_depth (node)) > 1) {
-			temp -> format_info += (depth - 1 << 8);
 		}
-		/* arm info */
-		if (g_node_depth (node) > 1) {
-			if (node == g_node_last_sibling (node)) {
-				temp -> format_info += ERICH_ARM2;
+		/* node is not root */
+		else {
+			/* initialize */
+			memset (temp -> base_format, 0x0, sizeof (temp -> base_format));
+			memset (temp -> format, 0x0, sizeof (temp -> format));
+
+			temp -> lastchild = g_node_last_child (node); /* lastchild */
+
+			/* extend the parent's base_format */
+			GNode* parent = temp -> parent;
+			TreeElement* temp_parent = (TreeElement*) parent -> data;
+			int length = strlen (temp_parent -> base_format);
+			strncpy (temp -> base_format, temp_parent -> base_format, length);
+
+			/* base_format */
+			char base_format_link [3];
+			char* temp_base_format;
+			TreeElement* temp_grand_parent = NULL;
+			if (temp_parent -> parent) {
+				GNode* grand_parent = temp_parent -> parent;
+				temp_grand_parent = grand_parent -> data;
+				if (temp_grand_parent -> lastchild == temp -> parent)
+					temp_base_format = "\t\0";
+				else temp_base_format = "|\t";
 			}
 			else {
-				temp -> format_info += ERICH_ARM1;
+				temp_base_format = "\t\0";
 			}
-		}
-		/* sign info */
-		if (!(G_NODE_IS_LEAF (node))) {
-			GNode* first = g_node_first_child (node);
-			STOCKINFO* first_temp = (STOCKINFO*) first -> data;
-			if (first_temp -> IsActivated) {
-				temp -> format_info += ERICH_NAGATIVE;
-			}
-			else temp -> format_info += ERICH_POSITIVE;
-		}
 
-		GPtrArray* array = (GPtrArray*) g_ptr_array;
+			strncpy (base_format_link, temp_base_format, 3);			
+			length = strlen (temp -> base_format);
+			strncpy (temp -> base_format + length, base_format_link, 3);
+
+			/* format */
+			length = strlen (temp -> base_format);
+			strncpy (temp -> format, temp -> base_format, length);
+
+			/* ARM */
+			char* arm;
+			if (node == temp_parent -> lastchild) {
+				arm = "*-";
+			}
+			else {
+				arm = "|-";
+			}
+			length = strlen (temp -> format);
+			strncpy (temp -> format + length, arm, 3);
+
+			/* SIGN */
+			char sign;
+			if (!G_NODE_IS_LEAF (node)) {
+				if ((temp -> state_info & BASIS_OPENED) == IS_OPENED) sign = '-';
+
+				else sign = '+';
+				length = strlen (temp -> format);
+				strncpy (temp -> format + length, &sign ,1);
+			}
+			else {
+				temp -> state_info += IS_LEAF;
+			}
+		}	
+
 		g_ptr_array_add (g_ptr_array, temp);
 	}
 	return false;
 }
 
 static void check_and_store (GNode* node, gpointer data) {
-	STOCKINFO* temp = (STOCKINFO*) node -> data;
+	TreeElement* temp = (TreeElement*) node -> data;
+	STOCKINFO* stock_data = (STOCKINFO*) temp -> userdata;
+
 	/* 얕은 복사 */
 	regex_t_and_node* temp_data = (regex_t_and_node*) malloc (sizeof (regex_t_and_node)); 
 	*temp_data = *(regex_t_and_node*) data;
 
-	int status = regexec (&(temp_data -> state), temp -> symbol, 0, NULL, 0);
+	int status = regexec (&(temp_data -> state), stock_data -> symbol, 0, NULL, 0);
 	if (status == 0 || g_node_depth (node) == 2) {
 		/* 얕은 복사 */
-		STOCKINFO* copy_data = (STOCKINFO*) malloc (sizeof (STOCKINFO));
+		/*
+		TreeElement* copy_data = (TreeElement*) malloc (sizeof (TreeElement));
 		*copy_data = *temp;
-		GNode* copy_node = g_node_new (copy_data);
+		*/
+		GNode* copy_node = new_tree_node (stock_data, IS_OPENED | IS_ACTIVATED, temp_data -> array);
 		g_node_insert (temp_data -> array, -1, copy_node);
 		
 		temp_data -> array = copy_node;
@@ -83,11 +151,6 @@ static void check_and_store (GNode* node, gpointer data) {
 	free (temp_data);
 	return;
 }
-void open_close_branch (GNode* parent, int flag) {
-	if (!G_NODE_IS_LEAF (parent)) {
-		g_node_children_foreach (parent, G_TRAVERSE_ALL, activate_node, &flag);
-	}
-}
 
 GPtrArray* node_to_array (GNode* node, GPtrArray* empty_GPtrArray) {
 	empty_GPtrArray = g_ptr_array_new ();
@@ -95,33 +158,20 @@ GPtrArray* node_to_array (GNode* node, GPtrArray* empty_GPtrArray) {
 	g_node_traverse (node, G_PRE_ORDER, G_TRAVERSE_ALL, -1, store_into_g_ptr_array, (gpointer) fulled_GPtrArray);
 	return fulled_GPtrArray;
 }
-/*
-int next_branch_point (int id) {
-	char stringID [20];
-	sprintf (stringID, "%d", id);
 
-	int length = strlen (stringID);
-	int zero_position = length;
-	char* temp = stringID;
-	for (zero_position; *temp; temp ++, zero_position --) {
-		if (*temp == '0') break;
-	}
-	
-	char* plus = (char*) malloc (zero_position + 2);
-	plus [0] = '1';
-	temp = plus;
-	temp ++;
-	for (; *temp; temp ++) {
-		*temp = '0';
-	}
-	plus [zero_position + 1] = '\0';
-	id += atoi (plus);
+void open_close_branch (GNode* parent, int flag) {
+	if (!G_NODE_IS_LEAF (parent)) {
+		/* remove open flag */
+		TreeElement* temp = (TreeElement*) parent -> data;
+		temp -> state_info -= (temp -> state_info & BASIS_OPENED);
 
-	return id;
+		/* and redefine */
+		temp -> state_info += flag;
+		g_node_children_foreach (parent, G_TRAVERSE_ALL, activate_node, &flag);
+	}
 }
-*/
 
-void dump_to_parent (GNode* parent, STOCKINFO table [], int length) {
+void dump_to_parent (GNode* parent, TreeElement table [], int length) {
 	int i = 0;
 	for (i = 0; i < length ; i++) {
 		GNode* temp = g_node_new (&table [i]);
@@ -130,11 +180,11 @@ void dump_to_parent (GNode* parent, STOCKINFO table [], int length) {
 }
 
 GNode* search_by_regex (GNode* node, char* pattern, GNode* empty_GNode) {
-	/* 얕은 복사 */
-	STOCKINFO* root_data = (STOCKINFO*) malloc (sizeof (STOCKINFO));
-	*root_data = *(STOCKINFO*) node -> data;
-	empty_GNode = g_node_new (root_data);
-	/* -- ! 얕은 복사 */
+	TreeElement* root_data;
+	root_data = (TreeElement*) node -> data;
+	STOCKINFO* userdata = (STOCKINFO*) root_data -> userdata;
+	empty_GNode = new_tree_node (userdata, IS_OPENED | IS_ACTIVATED, NULL);
+	
 	GNode* fulled_GNode = empty_GNode;
 	regex_t_and_node data;
 	regex_t* state = &(data.state);
@@ -148,3 +198,5 @@ GNode* search_by_regex (GNode* node, char* pattern, GNode* empty_GNode) {
 	regfree (&data.state);
 	return fulled_GNode;
 }
+
+

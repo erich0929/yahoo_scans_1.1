@@ -7,6 +7,7 @@
 #include "./boardwidget/boardwidget.h"
 #include "./treeapi/treeapi.h"
 #include "./commoninfo.h"
+#include "./nyseInfo.h"
 #include "./kospiInfo.h"
 
 #define WHAT_ABOUT_TABLE	0x000F
@@ -167,7 +168,10 @@ int main(int argc, char* argv[])
 								main_node = result_root; /* is copied with world */
 
 								result_data_table = node_to_array (result_root, result_data_table);
+
 								clear_board (main_board);
+								touchwin (main_board -> mainWnd);
+
 								main_board -> dataTable = result_data_table;
 								main_board -> firstrow_index = 0;
 								main_board -> selected_index = 0;
@@ -203,7 +207,10 @@ int main(int argc, char* argv[])
 							main_node = result_root; /* is copied with world */
 					
 							result_data_table = node_to_array (result_root, result_data_table);
+
 							clear_board (main_board);
+							touchwin (main_board -> mainWnd);
+
 							main_board -> dataTable = result_data_table;
 							main_board -> firstrow_index = 0;
 							main_board -> selected_index = 0;

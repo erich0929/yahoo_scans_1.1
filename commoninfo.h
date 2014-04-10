@@ -1,9 +1,3 @@
 STOCKINFO WORLD = {"World", NULL};
 STOCKINFO NYSE = {"NYSE", NULL};
 STOCKINFO KOSPI = {"KOSPI", NULL};
-
-STOCKINFO NYSE_LIST [] = {
-	{"APPLE", "14255.NS"},
-	{"MicroSoft", "14547.NS"},
-	{"Boeing", "17554.NS"},
-};

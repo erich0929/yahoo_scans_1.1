@@ -9,6 +9,7 @@ echo 'STOCKINFO KOSPI_LIST [] = {' >> ./kospiInfo.h
 while read line
 do
 count=`expr $count + 1`
+echo "$count / $lastline" | awk '{printf "\rIn working ... process : %s", $0}'
 element=`echo "$line" | awk 'BEGIN {FS="\t"}; {printf "{\"%s\", \"%s.KS\"}", $1, $2}'`
 if [ $lastline -eq $count ] ; then
 	echo $element >> ./kospiInfo.h
@@ -19,3 +20,4 @@ fi
 done < ~/문서/stock/krx.csv
 
 echo '};' >> ./kospiInfo.h
+echo "\"kospiInfo.h\" C header file is created successfully in this directory!!" | awk '{printf "\r%s \n", $0}'

@@ -13,6 +13,9 @@ treeapi/treeapi.o :
 yahoo_scans.o : yahoo_scans.c
 	gcc -g -c -o $@ $^ `pkg-config --cflags glib-2.0`
 
+header :
+	bash ./shell/makeKospiInfo.sh && bash ./shell/makeNyseInfo.sh
+
 clean :
 	rm -rf *.o yahoo_scans
 	cd stockapi && make clean
